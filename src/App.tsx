@@ -1,150 +1,39 @@
-import { useReducer } from "react";
 import "./App.css";
-
-import produce from "immer";
-
-type SingleCounterState = {
-  type: "incrementing" | "decrementing";
-  value: number;
-};
-
-type AppState = {
-  counters: SingleCounterState[];
-  globalLimits: {
-    max: number;
-    min: number;
-  };
-};
-
-const initialState: AppState = {
-  counters: [
-    {
-      type: "incrementing",
-      value: 0,
-    },
-  ],
-  globalLimits: {
-    max: 10,
-    min: 0,
-  },
-};
-
-type AppAction =
-  | {
-      type: "CHANGE_COUNTER";
-      payload: {
-        index: number;
-      };
-    }
-  | {
-      type: "ADD_COUNTER";
-      payload: {
-        type: SingleCounterState["type"]; // NOTE THIS
-      };
-    }
-  | {
-      type: "CHANGE_MAX_LIMIT" | "CHANGE_MIN_LIMIT";
-      payload: {
-        value: number;
-      };
-    };
-
-function reducer(state: AppState, action: AppAction): AppState {
-  switch (action.type) {
-    case "CHANGE_COUNTER":
-      return produce(state, (draft) => {
-        const draftCounter = draft.counters[action.payload.index];
-        if (draftCounter.type === "incrementing") {
-          if (state.globalLimits.max > draftCounter.value) {
-            draftCounter.value++;
-          }
-        } else {
-          if (state.globalLimits.min < draftCounter.value) {
-            draftCounter.value--;
-          }
-        }
-      });
-    case "ADD_COUNTER":
-      return produce(state, (draft) => {
-        draft.counters.push({
-          type: action.payload.type,
-          value:
-            action.payload.type === "incrementing"
-              ? state.globalLimits.min
-              : state.globalLimits.max,
-        });
-      });
-    case "CHANGE_MAX_LIMIT":
-      return produce(state, (draft) => {
-        draft.globalLimits.max = action.payload.value;
-        draft.counters.forEach((counter) => {
-          if (counter.value > action.payload.value) {
-            counter.value = action.payload.value;
-          }
-        });
-      });
-    case "CHANGE_MIN_LIMIT":
-      return produce(state, (draft) => {
-        draft.globalLimits.min = action.payload.value;
-        draft.counters.forEach((counter) => {
-          if (counter.value < action.payload.value) {
-            counter.value = action.payload.value;
-          }
-        });
-      });
-    default:
-      throw new Error();
-  }
-}
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "./main";
+import {
+  changeMaxLimit,
+  changeMinLimit,
+  changeCounter,
+  addCounter,
+} from "./countersSlice";
 
 function App() {
-  const [state, dispatch] = useReducer(reducer, initialState);
-
+  // Discuss when this is updated
+  // useSelector vs createSelector
+  // https://stackoverflow.com/questions/63493433/confusion-about-useselector-and-createselector-with-redux-toolkit
+  const { counters, globalLimits } = useSelector(
+    (state: RootState) => state.counters
+  );
+  const dispatch = useDispatch();
   return (
     <div className="App">
       <div className="CounterGrid">
-        {state.counters.map((counter, index) => (
-          <button
-            onClick={() =>
-              dispatch({
-                type: "CHANGE_COUNTER",
-                payload: {
-                  index,
-                },
-              })
-            }
-          >
-            count is {state.counters[index].value}
+        {counters.map((counter, index) => (
+          <button onClick={() => dispatch(changeCounter({ index }))}>
+            count is {counters[index].value}
           </button>
         ))}
       </div>
       <section>
         <h2>Configure counters</h2>
-        <button
-          onClick={() =>
-            dispatch({
-              type: "ADD_COUNTER",
-              payload: {
-                type: "incrementing",
-              },
-            })
-          }
-        >
-          Add incrementing counter from {state.globalLimits.min}
+        <button onClick={() => dispatch(addCounter({ type: "incrementing" }))}>
+          Add incrementing counter from {globalLimits.min}
         </button>
         <br />
         <br />
-        <button
-          onClick={() =>
-            dispatch({
-              type: "ADD_COUNTER",
-              payload: {
-                type: "decrementing",
-              },
-            })
-          }
-        >
-          Add decrementing counter from {state.globalLimits.max}
+        <button onClick={() => dispatch(addCounter({ type: "decrementing" }))}>
+          Add decrementing counter from {globalLimits.max}
         </button>
         <br />
         <br />
@@ -152,14 +41,9 @@ function App() {
           Min:
           <input
             type="text"
-            value={state.globalLimits.min}
+            value={globalLimits.min}
             onChange={(e) =>
-              dispatch({
-                type: "CHANGE_MIN_LIMIT",
-                payload: {
-                  value: +e.target.value,
-                },
-              })
+              dispatch(changeMinLimit({ value: +e.target.value }))
             }
           />
         </label>
@@ -169,14 +53,9 @@ function App() {
           Max:
           <input
             type="text"
-            value={state.globalLimits.max}
+            value={globalLimits.max}
             onChange={(e) =>
-              dispatch({
-                type: "CHANGE_MAX_LIMIT",
-                payload: {
-                  value: +e.target.value,
-                },
-              })
+              dispatch(changeMaxLimit({ value: +e.target.value }))
             }
           />
         </label>

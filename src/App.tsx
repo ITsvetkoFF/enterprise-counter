@@ -10,6 +10,10 @@ type SingleCounterState = {
 
 type AppState = {
   counters: SingleCounterState[];
+  globalLimits: {
+    max: number;
+    min: number;
+  };
 };
 
 const initialState: AppState = {
@@ -19,6 +23,10 @@ const initialState: AppState = {
       value: 0,
     },
   ],
+  globalLimits: {
+    max: 10,
+    min: 0,
+  },
 };
 
 function App() {
@@ -32,7 +40,19 @@ function App() {
             onClick={() =>
               setState((prevState) =>
                 produce(prevState, (draft) => {
-                  draft.counters[index].value++;
+                  if (draft.counters[index].type === "incrementing") {
+                    if (
+                      prevState.globalLimits.max > draft.counters[index].value
+                    ) {
+                      draft.counters[index].value++;
+                    }
+                  } else {
+                    if (
+                      prevState.globalLimits.min < draft.counters[index].value
+                    ) {
+                      draft.counters[index].value--;
+                    }
+                  }
                 })
               )
             }
@@ -45,19 +65,78 @@ function App() {
         <h2>Configure counters</h2>
         <button
           onClick={() => {
-            setState((prevState) => ({
-              counters: [
-                ...prevState.counters,
-                {
+            setState((prevState) =>
+              produce(prevState, (draft) => {
+                draft.counters.push({
                   type: "incrementing",
-                  value: 0,
-                },
-              ],
-            }));
+                  value: prevState.globalLimits.min,
+                });
+              })
+            );
           }}
         >
-          Add incrementing counter
+          Add incrementing counter from {state.globalLimits.min}
         </button>
+        <br />
+        <br />
+        <button
+          onClick={() => {
+            setState((prevState) =>
+              produce(prevState, (draft) => {
+                draft.counters.push({
+                  type: "decrementing",
+                  value: prevState.globalLimits.max,
+                });
+              })
+            );
+          }}
+        >
+          Add decrementing counter from {state.globalLimits.max}
+        </button>
+        <br />
+        <br />
+        <label>
+          Min:
+          <input
+            type="text"
+            value={state.globalLimits.min}
+            onChange={(e) =>
+              setState((prevState) =>
+                produce(prevState, (draft) => {
+                  const min = +e.target.value;
+                  draft.globalLimits.min = min;
+                  draft.counters.forEach((counter) => {
+                    if (counter.value < min) {
+                      counter.value = min;
+                    }
+                  });
+                })
+              )
+            }
+          />
+        </label>
+        <br />
+        <br />
+        <label>
+          Max:
+          <input
+            type="text"
+            value={state.globalLimits.max}
+            onChange={(e) =>
+              setState((prevState) =>
+                produce(prevState, (draft) => {
+                  const max = +e.target.value;
+                  draft.globalLimits.max = max;
+                  draft.counters.forEach((counter) => {
+                    if (counter.value > max) {
+                      counter.value = max;
+                    }
+                  });
+                })
+              )
+            }
+          />
+        </label>
       </section>
     </div>
   );

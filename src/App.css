@@ -12,3 +12,9 @@
   gap: 1rem;
   margin-bottom: 3rem;
 }
+
+nav {
+  padding: 1rem;
+  margin-bottom: 2rem;
+  background-color: #f9f9f9;
+}

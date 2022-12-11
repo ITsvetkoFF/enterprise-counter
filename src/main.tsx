@@ -6,10 +6,12 @@ import { Provider } from "react-redux";
 import App from "./App";
 import "./index.css";
 import countersReducer from "./countersSlice";
+import usersReducer from "./usersSlice";
 
 export const store = configureStore({
   reducer: {
     counters: countersReducer,
+    users: usersReducer,
   },
 });
 

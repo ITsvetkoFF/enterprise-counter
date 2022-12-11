@@ -7,6 +7,7 @@ import {
   changeCounter,
   addCounter,
 } from "./countersSlice";
+import IntroduceYourself from "./IntroduceYourself";
 
 function App() {
   // Discuss when this is updated
@@ -15,9 +16,16 @@ function App() {
   const { counters, globalLimits } = useSelector(
     (state: RootState) => state.counters
   );
+  const { isSuperAdmin } = useSelector((state: RootState) => state.users);
   const dispatch = useDispatch();
   return (
     <div className="App">
+      <nav>
+        <IntroduceYourself />
+        <p>
+          Note: you can create decrementing counters only if you're an admin
+        </p>
+      </nav>
       <div className="CounterGrid">
         {counters.map((counter, index) => (
           <button onClick={() => dispatch(changeCounter({ index }))}>
@@ -32,9 +40,14 @@ function App() {
         </button>
         <br />
         <br />
-        <button onClick={() => dispatch(addCounter({ type: "decrementing" }))}>
-          Add decrementing counter from {globalLimits.max}
-        </button>
+        {isSuperAdmin && (
+          <button
+            onClick={() => dispatch(addCounter({ type: "decrementing" }))}
+          >
+            Add decrementing counter from {globalLimits.max}
+          </button>
+        )}
+
         <br />
         <br />
         <label>

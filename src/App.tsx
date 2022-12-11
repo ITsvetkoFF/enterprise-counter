@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useReducer } from "react";
 import "./App.css";
 
 import produce from "immer";
@@ -29,8 +29,76 @@ const initialState: AppState = {
   },
 };
 
+type AppAction =
+  | {
+      type: "CHANGE_COUNTER";
+      payload: {
+        index: number;
+      };
+    }
+  | {
+      type: "ADD_COUNTER";
+      payload: {
+        type: SingleCounterState["type"]; // NOTE THIS
+      };
+    }
+  | {
+      type: "CHANGE_MAX_LIMIT" | "CHANGE_MIN_LIMIT";
+      payload: {
+        value: number;
+      };
+    };
+
+function reducer(state: AppState, action: AppAction): AppState {
+  switch (action.type) {
+    case "CHANGE_COUNTER":
+      return produce(state, (draft) => {
+        const draftCounter = draft.counters[action.payload.index];
+        if (draftCounter.type === "incrementing") {
+          if (state.globalLimits.max > draftCounter.value) {
+            draftCounter.value++;
+          }
+        } else {
+          if (state.globalLimits.min < draftCounter.value) {
+            draftCounter.value--;
+          }
+        }
+      });
+    case "ADD_COUNTER":
+      return produce(state, (draft) => {
+        draft.counters.push({
+          type: action.payload.type,
+          value:
+            action.payload.type === "incrementing"
+              ? state.globalLimits.min
+              : state.globalLimits.max,
+        });
+      });
+    case "CHANGE_MAX_LIMIT":
+      return produce(state, (draft) => {
+        draft.globalLimits.max = action.payload.value;
+        draft.counters.forEach((counter) => {
+          if (counter.value > action.payload.value) {
+            counter.value = action.payload.value;
+          }
+        });
+      });
+    case "CHANGE_MIN_LIMIT":
+      return produce(state, (draft) => {
+        draft.globalLimits.min = action.payload.value;
+        draft.counters.forEach((counter) => {
+          if (counter.value < action.payload.value) {
+            counter.value = action.payload.value;
+          }
+        });
+      });
+    default:
+      throw new Error();
+  }
+}
+
 function App() {
-  const [state, setState] = useState(initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   return (
     <div className="App">
@@ -38,23 +106,12 @@ function App() {
         {state.counters.map((counter, index) => (
           <button
             onClick={() =>
-              setState((prevState) =>
-                produce(prevState, (draft) => {
-                  if (draft.counters[index].type === "incrementing") {
-                    if (
-                      prevState.globalLimits.max > draft.counters[index].value
-                    ) {
-                      draft.counters[index].value++;
-                    }
-                  } else {
-                    if (
-                      prevState.globalLimits.min < draft.counters[index].value
-                    ) {
-                      draft.counters[index].value--;
-                    }
-                  }
-                })
-              )
+              dispatch({
+                type: "CHANGE_COUNTER",
+                payload: {
+                  index,
+                },
+              })
             }
           >
             count is {state.counters[index].value}
@@ -64,32 +121,28 @@ function App() {
       <section>
         <h2>Configure counters</h2>
         <button
-          onClick={() => {
-            setState((prevState) =>
-              produce(prevState, (draft) => {
-                draft.counters.push({
-                  type: "incrementing",
-                  value: prevState.globalLimits.min,
-                });
-              })
-            );
-          }}
+          onClick={() =>
+            dispatch({
+              type: "ADD_COUNTER",
+              payload: {
+                type: "incrementing",
+              },
+            })
+          }
         >
           Add incrementing counter from {state.globalLimits.min}
         </button>
         <br />
         <br />
         <button
-          onClick={() => {
-            setState((prevState) =>
-              produce(prevState, (draft) => {
-                draft.counters.push({
-                  type: "decrementing",
-                  value: prevState.globalLimits.max,
-                });
-              })
-            );
-          }}
+          onClick={() =>
+            dispatch({
+              type: "ADD_COUNTER",
+              payload: {
+                type: "decrementing",
+              },
+            })
+          }
         >
           Add decrementing counter from {state.globalLimits.max}
         </button>
@@ -101,17 +154,12 @@ function App() {
             type="text"
             value={state.globalLimits.min}
             onChange={(e) =>
-              setState((prevState) =>
-                produce(prevState, (draft) => {
-                  const min = +e.target.value;
-                  draft.globalLimits.min = min;
-                  draft.counters.forEach((counter) => {
-                    if (counter.value < min) {
-                      counter.value = min;
-                    }
-                  });
-                })
-              )
+              dispatch({
+                type: "CHANGE_MIN_LIMIT",
+                payload: {
+                  value: +e.target.value,
+                },
+              })
             }
           />
         </label>
@@ -123,17 +171,12 @@ function App() {
             type="text"
             value={state.globalLimits.max}
             onChange={(e) =>
-              setState((prevState) =>
-                produce(prevState, (draft) => {
-                  const max = +e.target.value;
-                  draft.globalLimits.max = max;
-                  draft.counters.forEach((counter) => {
-                    if (counter.value > max) {
-                      counter.value = max;
-                    }
-                  });
-                })
-              )
+              dispatch({
+                type: "CHANGE_MAX_LIMIT",
+                payload: {
+                  value: +e.target.value,
+                },
+              })
             }
           />
         </label>

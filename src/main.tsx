@@ -18,6 +18,9 @@ export const store = configureStore({
   },
   middleware: [
     (storeAPI) => (next) => (action) => {
+      console.group("middleware");
+      console.dir({ storeAPI, next, action });
+      console.groupEnd();
       if (action.type !== "counters/addCounter") return next(action);
       // Discuss 2 benefits from this solution:
       // if (!addCounter.match(action)) return next(action);

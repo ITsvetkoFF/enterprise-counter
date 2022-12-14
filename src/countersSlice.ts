@@ -51,6 +51,7 @@ export const countersSlice = createSlice({
         createdAt: number;
       }>
     ) => {
+      console.log("Reducer");
       draft.counters.push({
         type: action.payload.type,
         value:

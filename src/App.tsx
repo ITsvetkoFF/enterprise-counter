@@ -28,7 +28,10 @@ function App() {
       </nav>
       <div className="CounterGrid">
         {counters.map((counter, index) => (
-          <button onClick={() => dispatch(changeCounter({ index }))}>
+          <button
+            key={index}
+            onClick={() => dispatch(changeCounter({ index }))}
+          >
             count is {counters[index].value}
           </button>
         ))}

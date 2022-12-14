@@ -35,14 +35,30 @@ function App() {
       </div>
       <section>
         <h2>Configure counters</h2>
-        <button onClick={() => dispatch(addCounter({ type: "incrementing" }))}>
+        <button
+          onClick={() =>
+            dispatch(
+              addCounter({
+                type: "incrementing",
+                createdAt: new Date().getTime(),
+              })
+            )
+          }
+        >
           Add incrementing counter from {globalLimits.min}
         </button>
         <br />
         <br />
         {isSuperAdmin && (
           <button
-            onClick={() => dispatch(addCounter({ type: "decrementing" }))}
+            onClick={() =>
+              dispatch(
+                addCounter({
+                  type: "decrementing",
+                  createdAt: new Date().getTime(),
+                })
+              )
+            }
           >
             Add decrementing counter from {globalLimits.max}
           </button>

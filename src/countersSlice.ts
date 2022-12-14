@@ -4,6 +4,7 @@ import { createSlice } from "@reduxjs/toolkit";
 export type SingleCounterState = {
   type: "incrementing" | "decrementing";
   value: number;
+  startedAt: number; // timestamp
 };
 export type CounterState = {
   counters: SingleCounterState[];
@@ -13,18 +14,19 @@ export type CounterState = {
   };
 };
 
-const initialState: CounterState = {
+const initialState = (): CounterState => ({
   counters: [
     {
       type: "incrementing",
       value: 0,
+      startedAt: new Date().getTime(),
     },
   ],
   globalLimits: {
     max: 10,
     min: 0,
   },
-};
+});
 
 export const countersSlice = createSlice({
   name: "counters",
@@ -46,6 +48,7 @@ export const countersSlice = createSlice({
       draft,
       action: PayloadAction<{
         type: SingleCounterState["type"];
+        createdAt: number;
       }>
     ) => {
       draft.counters.push({
@@ -54,6 +57,7 @@ export const countersSlice = createSlice({
           action.payload.type === "incrementing"
             ? draft.globalLimits.min
             : draft.globalLimits.max,
+        startedAt: action.payload.createdAt,
       });
     },
     changeMaxLimit: (draft, action: PayloadAction<{ value: number }>) => {
